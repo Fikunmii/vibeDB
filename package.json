@@ -1,1 +1,8 @@
-{"name":"vibedb","private":false,"version":"0.0.0-public-bootstrap"}
+{
+  "name": "@vibeplatform/execution-engine",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "pg": "8.23.1"
+  }
+}
