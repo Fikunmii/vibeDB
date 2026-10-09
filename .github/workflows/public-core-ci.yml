@@ -1,0 +1,53 @@
+name: Public Core CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: public-core-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  node24-validation:
+    name: Node.js 24 / syntax and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Enforce Node.js 24 policy
+        shell: bash
+        run: |
+          test "$(cat .nvmrc)" = "24"
+          test "$(node -p 'process.versions.node.split(".")[0]')" = "24"
+          node --version
+          npm --version
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Check JavaScript module syntax
+        shell: bash
+        run: |
+          find . -type f -name '*.mjs' -not -path './node_modules/*' -print0 |
+            xargs -0 -r -n 1 node --check
+
+      - name: Run Node.js test suite
+        run: node --test
+
+      - name: Run Python Query IR tests
+        run: python3 query-ir/test_query_ir.py
