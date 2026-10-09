@@ -28,14 +28,14 @@ jobs:
 
     steps:
       - name: Check out triggering commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
       - name: Set up Node.js 24
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '24'
           check-latest: true
@@ -129,6 +129,7 @@ jobs:
           fi
 
       - name: Validate tracked JSON and manifest files
+        if: ${{ !cancelled() }}
         shell: bash
         run: |
           set -euo pipefail
@@ -184,6 +185,7 @@ jobs:
           fi
 
       - name: Check shell script syntax
+        if: ${{ !cancelled() }}
         shell: bash
         run: |
           set -euo pipefail
@@ -201,6 +203,7 @@ jobs:
           done
 
       - name: Scan repository for exposed secrets
+        if: ${{ !cancelled() }}
         uses: gitleaks/gitleaks-action@v2.3.9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
