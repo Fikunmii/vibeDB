@@ -202,8 +202,17 @@ jobs:
             bash -n "$file"
           done
 
-      - name: Scan repository for exposed secrets
+      - name: Install Gitleaks CLI
         if: ${{ !cancelled() }}
-        uses: gitleaks/gitleaks-action@v2.3.9
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          go install github.com/zricethezav/gitleaks/v8@v8.24.2
+          "$(go env GOPATH)/bin/gitleaks" version
+
+      - name: Scan repository history for exposed secrets
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$(go env GOPATH)/bin/gitleaks" git --redact --verbose --exit-code 1
