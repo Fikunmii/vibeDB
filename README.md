@@ -1,35 +1,41 @@
-# Leruchi — VibeDB Core
+# Leruchi
 
-**A developer-first, agent-native database platform designed to bridge relational and graph workloads.**
+Leruchi is an open-source developer platform in active development that brings relational, graph, vector, realtime, and AI-agent access together behind consistent developer and agent interfaces. The design goal is to bridge SQL-style data access and graph traversal while keeping authorization, validation, and execution behind shared contracts.
 
-Leruchi is building VibeDB Core around a typed query and mutation interface, a secure execution boundary, tenant isolation, and developer tooling for applications and AI agents.
+**Runtime:** Node.js 24 only. Node.js 20 is not supported.
 
-## Project status
+## Core architecture
 
-VibeDB Core is in active engineering and release-candidate review. This repository is the intended **public home for the approved open-source core**. The reviewed source export has not yet been published here as a versioned release, so this repository should not yet be treated as a stable install target.
+- **PostgreSQL foundation:** relational storage, migration-ledger discipline, tenant isolation, and row-level security.
+- **Query IR and Mutation IR:** engine-neutral contracts validated before execution.
+- **Execution and compilers:** PostgreSQL recursive-query and Apache AGE graph paths behind controlled execution interfaces.
+- **Schema Catalog and Graph API:** consistent metadata and graph operations without asking SDKs or agents to construct privileged database queries.
+- **SDK, CLI, and MCP:** developer and AI-agent interfaces that delegate to the shared validation and authorization boundary.
+- **Retrieval and observability:** hybrid retrieval planning, explainability, audit events, traces, and operational visibility.
+- **Realtime and recovery:** outbox-oriented graph updates plus backup/restore tooling.
 
-Engineering work and CI validation currently happen in [Leruchi-development](https://github.com/Leruchii/Leruchi-development). Only the explicitly reviewed and approved open-source export should be promoted from that repository; internal/control-plane material is not part of the public distribution.
+## Development status
 
-## Design goals
+This repository is an engineering preview, not a declaration of production readiness. Interfaces and schemas may evolve. Automated tests and the OWASP ASVS verification profile are engineering evidence, not a claim of full compliance with ASVS or any other standard.
 
-- **Relational + graph:** give developers a coherent interface across SQL-backed and graph-oriented data.
-- **Safe by default:** enforce trusted tenant context, validation, capability checks, and a secure execution boundary.
-- **Agent-native:** provide APIs and tooling that AI agents and MCP-enabled clients can use with explicit, scoped permissions.
-- **Developer-focused:** build SDK, CLI, schema/catalog, diagnostics, and operational visibility into the workflow.
-- **Node.js 24:** Node.js 24 is the supported JavaScript runtime baseline; Node.js 20 is not supported.
+In particular, the capability-grant and revocation service core is implemented and tested, but production identity-provider integration, authoritative tenant policy, production signing-key custody/rotation, least-privilege deployment roles, private networking or mTLS, monitoring/alerting, and staging recovery evidence must be completed before treating production authorization as deployed.
 
-## Before using this project
+## Local development
 
-- No versioned public release is available from this repository yet.
-- Do not use this repository as evidence of production readiness.
-- Production identity-provider integration, signing-key operations, production database-role hardening, private networking, monitoring, and recovery validation remain deployment requirements.
-- Third-party dependency licensing and attribution review must be resolved before a formal release. See the development repository's `THIRD_PARTY_NOTICES.md` for the current inventory; that inventory is not legal advice or legal clearance.
+1. Install Node.js 24 and Docker Compose.
+2. Review `docker-compose.yml` and `infra/supabase/docker-compose.yml` before starting local services. Their default passwords and JWT/service secrets are public test/development placeholders only; they must never be reused in a shared or production environment. The Supabase compatibility stack is an integration-test harness.
+3. Start the local database with `docker compose up -d db`.
+4. Install root dependencies with `npm ci --ignore-scripts`.
+5. Run the focused test files for the package or stage being changed. CI workflows under `.github/workflows/` define the authoritative stage-specific validation commands.
 
-## Development and release process
+The database is published on loopback (`127.0.0.1:5432`) by the supplied compose file. Do not expose this development configuration to an untrusted network.
 
-1. Build and test in [Leruchi-development](https://github.com/Leruchii/Leruchi-development).
-2. Generate the allowlisted source export and verify the exact source commit and artifact digests.
-3. Review source boundaries, security scan results, and third-party notices.
-4. Promote only the approved export here and publish a versioned release with accurate engineering-preview limitations.
+## Public source export and dependencies
 
-Until a versioned release is published, treat the project as an active engineering effort rather than a stable production dependency.
+`OSS_EXPORT_MANIFEST.json` defines the allowlisted source paths used by the sanitized candidate builder. The Stage 31/32 workflows verify the export boundary, Node.js runtime policy, security checks, and repeatable archive build.
+
+`THIRD_PARTY_NOTICES.md` inventories license metadata declared by the root and Studio npm lockfiles. It is not legal advice or a substitute for reviewing the exact release artifact, upstream license texts, attribution requirements, and compatibility of LGPL/MPL/CC-BY components.
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for vulnerability-reporting guidance. Never commit real credentials, tenant data, signing keys, or production configuration. MCP and the SDK are interfaces, not privileged execution paths; tenant isolation and server-side authorization must remain authoritative.
