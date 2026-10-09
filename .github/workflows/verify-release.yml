@@ -1,0 +1,206 @@
+name: Verify Release
+
+on:
+  pull_request:
+    branches:
+      - main
+  release:
+    types:
+      - created
+      - published
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-release-${{ github.event.pull_request.number || github.event.release.id || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Static, Dependency, and Security Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Check out triggering commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          check-latest: true
+
+      - name: Enforce Node.js major version 24
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          node --version
+          npm --version
+
+          node -e '
+            const major = Number(process.versions.node.split(".")[0]);
+            if (major !== 24) {
+              console.error("Expected Node.js 24; received " + process.version);
+              process.exit(1);
+            }
+          '
+
+          if [[ -f .nvmrc ]]; then
+            expected="$(tr -d '[:space:]' < .nvmrc)"
+            if [[ "$expected" != "24" && "$expected" != "v24" && "$expected" != "24.x" ]]; then
+              echo "::error::.nvmrc must specify Node.js 24; found '$expected'."
+              exit 1
+            fi
+          fi
+
+      - name: Validate root package manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -f package.json || {
+            echo "::error::Root package.json is missing."
+            exit 1
+          }
+
+          node -e '
+            const fs = require("node:fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+
+            if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) {
+              throw new Error("Root package.json must contain a JSON object.");
+            }
+
+            if (!pkg.name || typeof pkg.name !== "string") {
+              throw new Error("Root package.json must declare a package name.");
+            }
+
+            console.log("Valid package manifest:", pkg.name);
+          '
+
+      - name: Resolve dependencies and verify lockfile consistency
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -f package-lock.json || -f npm-shrinkwrap.json ]]; then
+            echo "Lockfile found; performing clean dependency installation."
+            npm ci --ignore-scripts --no-audit --no-fund
+          else
+            echo "No root npm lockfile exists; resolving dependencies without modifying tracked files."
+            npm install \
+              --package-lock-only \
+              --ignore-scripts \
+              --no-audit \
+              --no-fund \
+              --package-lock=true
+
+            if [[ ! -f package-lock.json ]]; then
+              echo "::error::npm did not generate a package-lock.json during dependency resolution."
+              exit 1
+            fi
+
+            node -e '
+              const fs = require("node:fs");
+              const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+              const lock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
+
+              if (lock.lockfileVersion == null) {
+                throw new Error("Generated lockfile is missing lockfileVersion.");
+              }
+
+              if (lock.packages?.[""]?.name && lock.packages[""].name !== pkg.name) {
+                throw new Error("Root package name does not match the generated lockfile.");
+              }
+
+              console.log("Dependency resolution and generated lockfile validation passed.");
+            '
+          fi
+
+      - name: Validate tracked JSON and manifest files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mapfile -d '' json_files < <(
+            git ls-files -z |
+              while IFS= read -r -d '' file; do
+                case "$file" in
+                  *.json|*.jsonc)
+                    printf '%s\0' "$file"
+                    ;;
+                esac
+              done
+          )
+
+          if (( ${#json_files[@]} == 0 )); then
+            echo "::error::No tracked JSON or JSONC files were found."
+            exit 1
+          fi
+
+          for file in "${json_files[@]}"; do
+            if [[ "$file" == *.jsonc ]]; then
+              echo "::warning::Skipping JSONC file '$file'; JSONC is not strict JSON."
+              continue
+            fi
+
+            echo "Validating $file"
+            node -e '
+              const fs = require("node:fs");
+              const file = process.argv[1];
+              try {
+                JSON.parse(fs.readFileSync(file, "utf8"));
+              } catch (error) {
+                console.error(`Invalid JSON in ${file}: ${error.message}`);
+                process.exit(1);
+              }
+            ' "$file"
+          done
+
+          if [[ -f OSS_EXPORT_MANIFEST.json ]]; then
+            node -e '
+              const fs = require("node:fs");
+              const manifest = JSON.parse(
+                fs.readFileSync("OSS_EXPORT_MANIFEST.json", "utf8")
+              );
+
+              if (!manifest || typeof manifest !== "object" || Array.isArray(manifest)) {
+                throw new Error("OSS_EXPORT_MANIFEST.json must contain a JSON object.");
+              }
+
+              console.log("OSS export manifest is valid JSON.");
+            '
+          fi
+
+      - name: Check shell script syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mapfile -d '' shell_files < <(git ls-files -z -- '*.sh')
+
+          if (( ${#shell_files[@]} == 0 )); then
+            echo "No tracked .sh files found; shell syntax check is not applicable."
+            exit 0
+          fi
+
+          for file in "${shell_files[@]}"; do
+            echo "Checking shell syntax: $file"
+            bash -n "$file"
+          done
+
+      - name: Scan repository for exposed secrets
+        uses: gitleaks/gitleaks-action@v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
