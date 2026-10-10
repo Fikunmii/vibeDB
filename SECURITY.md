@@ -25,3 +25,8 @@ The historical Gitleaks findings for `VAULT_ENC_KEY` at the exact fingerprints i
 The ignore entries are fingerprint-specific and do not disable the Gitleaks rule or suppress new occurrences. Never reuse a development value in staging or production. Production keys must be generated, stored, rotated, and accessed through the approved secret-management mechanism.
 
 The separately exposed GitHub credential is treated as rotated based on the repository owner's confirmation. This owner confirmation is distinct from repository scanning and does not replace the checks for any separate credential exposure.
+
+
+## Public export historical Gitleaks dispositions
+
+The sanitized public repository history contains three exact historical findings for the same fixed local-development Supavisor `VAULT_ENC_KEY` placeholder already documented in the development repository's security history. The current public tree requires a fresh local-only value through environment interpolation; no static key is retained in current Compose files. The findings are suppressed only by their exact commit-specific fingerprints in `.gitleaksignore`; new values and findings remain blocking. The owner must ensure the historical value was never used in a shared or production environment; if there is any doubt, rotate it in the relevant environment and investigate exposure.
