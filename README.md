@@ -1,6 +1,6 @@
 # Leruchi — Engineering Preview
 
-Leruchi is a developer- and AI-agent-oriented data platform that brings relational SQL, graph operations, vector retrieval, realtime changes, and agent workflows behind shared validation and authorization boundaries. Its goal is to bridge SQL-style data access and graph traversal without making clients or agents construct privileged database queries.
+Leruchi is a developer- and AI-agent-oriented data platform that brings relational SQL, graph operations, vector retrieval, realtime changes, and agent workflows behind shared validation and authorization boundaries. Leruchi Query IR is the engine-neutral contract between client intent and backend execution. Its goal is to bridge SQL-style data access and graph traversal without making clients or agents construct privileged database queries.
 
 **Runtime: Node.js 24 only.** Node.js 20 is not supported.
 
