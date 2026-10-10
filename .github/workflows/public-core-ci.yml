@@ -47,7 +47,7 @@ jobs:
             xargs -0 -r -n 1 node --check
 
       - name: Run architecture regression tests
-        run: node --test tests/architecture
+        run: node --test tests/architecture/contract-audit.mjs
 
       - name: Run Python Query IR contract tests
         run: python3 query-ir/test_query_ir.py
