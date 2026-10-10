@@ -5,10 +5,15 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
-SCHEMA = ROOT / "packages/query-ir/v1.schema.json"
-ERROR_SCHEMA = ROOT / "packages/query-ir/v1-error.schema.json"
-FIXTURES = ROOT / "packages/query-ir/fixtures"
+ROOT = Path(__file__).resolve().parent.parent
+# The development repository keeps Query IR under packages/query-ir; the
+# sanitized public export exposes the same contract at query-ir/.
+SCHEMA_DIR = ROOT / "packages/query-ir"
+if not SCHEMA_DIR.is_dir():
+    SCHEMA_DIR = ROOT / "query-ir"
+SCHEMA = SCHEMA_DIR / "v1.schema.json"
+ERROR_SCHEMA = SCHEMA_DIR / "v1-error.schema.json"
+FIXTURES = SCHEMA_DIR / "fixtures"
 
 def canonical(value):
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
