@@ -53,9 +53,11 @@ for (const [name, source] of [["SDK", sdk], ["CLI", cli]]) {
 }
 if (/tenant[_-]?id\s*[:=]/i.test(sdk)) fail("SDK must not expose client-controlled tenant authorization state");
 
-const buildPlan = read("BUILD_PLAN.md");
-assert.match(buildPlan, /shared graph definitions/i, "build plan must document shared/private graph metadata");
-assert.match(buildPlan, /tenant-owned graph definitions/i, "build plan must document tenant-owned graph metadata");
+// The sanitized public export intentionally excludes the internal BUILD_PLAN.md.
+// Verify the public-facing architecture documentation instead of requiring an internal control-plane file.
+const publicDocs = read("README.md");
+assert.match(publicDocs, /tenant isolation/i, "public architecture docs must describe tenant isolation");
+assert.match(publicDocs, /row-level security/i, "public architecture docs must describe row-level security");
 
 console.log(JSON.stringify({
   status: "ok",
