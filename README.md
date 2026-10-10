@@ -1,4 +1,4 @@
-# Leruchi Core — Engineering Preview
+# Leruchi — Engineering Preview
 
 Leruchi is a developer- and AI-agent-oriented data platform that brings relational SQL, graph operations, vector retrieval, realtime changes, and agent workflows behind shared validation and authorization boundaries. Its goal is to bridge SQL-style data access and graph traversal without making clients or agents construct privileged database queries.
 
@@ -15,7 +15,7 @@ Leruchi is a developer- and AI-agent-oriented data platform that brings relation
 - **Observability and recovery:** audit events, request correlation, traces, and backup/restore tooling.
 - **Studio:** a web interface and browser-level tests for developer workflows.
 
-The Query IR contract is one subsystem of Leruchi Core; it is not the complete product description. The IR expresses intent only. Schema validation, tenant authorization, cost/depth/result guardrails, planning, and engine compilation must occur behind this boundary.
+The Query IR contract is one subsystem of Leruchi; it is not the complete product description. The IR expresses intent only. Schema validation, tenant authorization, cost/depth/result guardrails, planning, and engine compilation must occur behind this boundary.
 
 ## Repository layout
 
@@ -30,9 +30,9 @@ The development and CI repository is [Leruchii/Leruchi-development](https://gith
 
 ## Engineering-preview status
 
-This is an engineering preview, not a declaration of production readiness, full security compliance, or legal clearance. Interfaces and schemas may evolve. Automated tests and the OWASP ASVS verification profile are engineering evidence, not a claim of full compliance with ASVS or any other standard.
+This is an engineering preview, not a declaration of production readiness or full security compliance. The project owner has confirmed approval of the Leruchi product name and legal/release review. Interfaces and schemas may evolve. Automated tests and the OWASP ASVS verification profile are engineering evidence, not a claim of full compliance with ASVS or any other standard.
 
-Before treating production authorization as deployed, the platform still requires verification of production identity-provider integration, authoritative tenant policy, signing-key custody and rotation, least-privilege deployment roles, private networking or mTLS where required, monitoring and alerting, and staging recovery evidence. The release's current limitations should be reviewed before relying on it for production workloads.
+Before treating production authorization as deployed, the platform still requires verification of production identity-provider integration, authoritative tenant policy, signing-key custody and rotation, least-privilege deployment roles, private networking or mTLS where required, monitoring and alerting, and staging recovery evidence. These production limitations must be closed and verified in the target environment before relying on Leruchi for production workloads.
 
 ## Local development
 
