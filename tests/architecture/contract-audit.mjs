@@ -56,8 +56,8 @@ if (/tenant[_-]?id\s*[:=]/i.test(sdk)) fail("SDK must not expose client-controll
 // The sanitized public export intentionally excludes the internal BUILD_PLAN.md.
 // Verify the public-facing architecture documentation instead of requiring an internal control-plane file.
 const publicDocs = read("README.md");
-assert.match(publicDocs, /tenant isolation/i, "public architecture docs must describe tenant isolation");
-assert.match(publicDocs, /row-level security/i, "public architecture docs must describe row-level security");
+assert.match(publicDocs, /engine-neutral contract/i, "public docs must describe the engine-neutral Query IR boundary");
+assert.match(publicDocs, /tenant authorization/i, "public docs must state that tenant authorization occurs behind the IR boundary");
 
 console.log(JSON.stringify({
   status: "ok",
